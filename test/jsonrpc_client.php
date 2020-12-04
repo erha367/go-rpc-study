@@ -28,4 +28,8 @@ if ($line === false) {
     exit;
 }
 var_dump(json_decode($line, true));
+//用完要关闭
+fclose($conn);
 exit;
+
+# 运行 php jsonrpc_client.php

@@ -1,2 +1,20 @@
-# apollo-client
-基于 gin  shima-park/agollo  二次封装的apollo客户端服务
+# go 语言rpc学习笔记
+## 代码结构
+```cassandraql
+go-rpc-study/
+├── LICENSE
+├── README.md
+├── go.mod
+├── go.sum
+├── main.go
+├── proto
+│   ├── arith.pb.go
+│   └── arith.proto
+├── service
+│   ├── grpc.go
+│   └── net_rpc.go
+└── test
+    ├── jsonrpc_client.php
+    └── netrpc_test.go
+
+```

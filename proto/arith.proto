@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = ".;proto";
+
+// 算术运算请求结构
+message ArithRequest {
+  int32 a = 1;
+  int32 b = 2;
+}
+
+// 算术运算响应结构
+message ArithResponse {
+  int32 pro = 1;  // 乘积
+}
+
+// rpc方法
+service ArithService {
+  rpc multiply (ArithRequest) returns (ArithResponse);    // 乘法运算方法
+}
+
+/*
+环境搭建
+1、安装 protobuf https://www.cnblogs.com/oolo/p/11840305.html#%E5%AE%89%E8%A3%85-golang
+2、go get -u github.com/golang/protobuf/protoc-gen-go
+*/
+
+
+/*- 编译 -*/
+// protoc --go_out=plugins=grpc:. arith.proto
+
+/*- ext -*/
+//option go_package = "aaa;bbb";
+//aaa 表示生成的go文件的存放地址，会自动生成目录的。
+//bbb 表示生成的go文件所属的包名

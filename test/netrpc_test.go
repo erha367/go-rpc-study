@@ -22,6 +22,7 @@ func TestNetrpc(t *testing.T) {
 	if err != nil {
 		t.Error(`http dial err`, err)
 	}
+	//调用乘法
 	req := service.ArithRequest{9, 2}
 	var res service.ArithResponse
 	err = conn.Call("Arith.Multiply", req, &res) // 乘法运算
@@ -29,6 +30,17 @@ func TestNetrpc(t *testing.T) {
 		t.Error("arith error: ", err)
 	}
 	t.Log(res.Pro)
+	//调用加法
+	req2 := service.ArithRequest{
+		A: 50,
+		B: 60,
+	}
+	var res2 service.ArithResponse
+	err = conn.Call("Jia.Add", req2, &res2)
+	if err != nil {
+		t.Log(err)
+	}
+	t.Log(res2.Pro)
 	defer conn.Close()
 }
 

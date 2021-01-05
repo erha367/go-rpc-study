@@ -19,8 +19,8 @@ if ($err === false) {
     var_dump('写入数据失败');
     exit;
 }
-
-stream_set_timeout($conn, 1, 0);
+sleep(3);
+stream_set_timeout($conn, 3, 0);
 $line = fgets($conn);
 var_dump($line);
 if ($line === false) {

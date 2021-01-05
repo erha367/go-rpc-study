@@ -38,12 +38,20 @@ func (this *Arith) Multiply(req ArithRequest, res *ArithResponse) error {
 	return nil
 }
 
-func NetRpc(){
+type Jia struct{}
+
+func (this *Jia) Add(req ArithRequest, res *ArithResponse) error {
+	res.Pro = req.A + req.B
+	return nil
+}
+
+func NetRpc() {
 	rpc.Register(new(Arith)) // 注册rpc服务
-	rpc.HandleHTTP()                 // 采用http协议作为rpc载体
+	rpc.Register(new(Jia))
+	rpc.HandleHTTP()         // 采用http协议作为rpc载体
 	lis, err := net.Listen("tcp", "127.0.0.1:8095")
 	if err != nil {
-		log.Fatalln(`rpc err `, err)
+		log.Fatalln(`rpcs err `, err)
 	}
 	http.Serve(lis, nil)
 }
@@ -59,7 +67,7 @@ func JsonRpc() {
 	for {
 		conn, err := lis.Accept() // 接收客户端连接请求
 		if err != nil {
-			log.Println(`for json rpc err `, err)
+			log.Println(`for json rpcs err `, err)
 			continue
 		}
 		go func(conn net.Conn) { // 并发处理客户端请求

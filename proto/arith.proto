@@ -29,6 +29,7 @@ service ArithService {
 
 /*- 编译 -*/
 // protoc --go_out=plugins=grpc:. arith.proto
+// protoc --plugin=grpc_php_plugin --php_out=./ arith.proto
 
 /*- ext -*/
 //option go_package = "aaa;bbb";

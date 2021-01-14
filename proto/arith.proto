@@ -17,7 +17,8 @@ message ArithResponse {
 
 // rpc方法
 service ArithService {
-  rpc multiply (ArithRequest) returns (ArithResponse);    // 乘法运算方法
+  rpc Multiply (ArithRequest) returns (ArithResponse);    // 乘法运算方法
+  rpc Add (ArithRequest) returns (ArithResponse);    // 乘法运算方法
 }
 
 /*

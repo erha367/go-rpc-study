@@ -23,6 +23,11 @@ func (s *GrpcServer) Multiply(ctx context.Context, req *proto.ArithRequest) (*pr
 	return &proto.ArithResponse{Pro: req.A * req.B}, nil
 }
 
+func (s *GrpcServer) Add(ctx context.Context, req *proto.ArithRequest) (*proto.ArithResponse, error) {
+	log.Println(`--- req ---`)
+	return &proto.ArithResponse{Pro: req.A + req.B}, nil
+}
+
 func GrpcInit() {
 	lis, err := net.Listen(`tcp`, `:8028`)
 	if err != nil {
@@ -33,7 +38,7 @@ func GrpcInit() {
 	proto.RegisterArithServiceServer(s, &GrpcServer{})
 	reflection.Register(s)
 	err = s.Serve(lis)
-	if  err != nil {
+	if err != nil {
 		log.Println("failed to serve: %v", err)
 		return
 	}

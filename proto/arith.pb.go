@@ -142,12 +142,15 @@ var file_arith_proto_rawDesc = []byte{
 	0x01, 0x61, 0x12, 0x0c, 0x0a, 0x01, 0x62, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x01, 0x62,
 	0x22, 0x21, 0x0a, 0x0d, 0x41, 0x72, 0x69, 0x74, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
 	0x65, 0x12, 0x10, 0x0a, 0x03, 0x70, 0x72, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x03,
-	0x70, 0x72, 0x6f, 0x32, 0x45, 0x0a, 0x0c, 0x41, 0x72, 0x69, 0x74, 0x68, 0x53, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x12, 0x35, 0x0a, 0x08, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x6c, 0x79, 0x12,
+	0x70, 0x72, 0x6f, 0x32, 0x77, 0x0a, 0x0c, 0x41, 0x72, 0x69, 0x74, 0x68, 0x53, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x12, 0x35, 0x0a, 0x08, 0x4d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x6c, 0x79, 0x12,
 	0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x72, 0x69, 0x74, 0x68, 0x52, 0x65, 0x71,
 	0x75, 0x65, 0x73, 0x74, 0x1a, 0x14, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x72, 0x69,
-	0x74, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x09, 0x5a, 0x07, 0x2e, 0x3b,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x30, 0x0a, 0x03, 0x41, 0x64,
+	0x64, 0x12, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x72, 0x69, 0x74, 0x68, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x14, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41,
+	0x72, 0x69, 0x74, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x09, 0x5a, 0x07,
+	0x2e, 0x3b, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -168,10 +171,12 @@ var file_arith_proto_goTypes = []interface{}{
 	(*ArithResponse)(nil), // 1: proto.ArithResponse
 }
 var file_arith_proto_depIdxs = []int32{
-	0, // 0: proto.ArithService.multiply:input_type -> proto.ArithRequest
-	1, // 1: proto.ArithService.multiply:output_type -> proto.ArithResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	0, // 0: proto.ArithService.Multiply:input_type -> proto.ArithRequest
+	0, // 1: proto.ArithService.Add:input_type -> proto.ArithRequest
+	1, // 2: proto.ArithService.Multiply:output_type -> proto.ArithResponse
+	1, // 3: proto.ArithService.Add:output_type -> proto.ArithResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -241,6 +246,7 @@ const _ = grpc.SupportPackageIsVersion6
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ArithServiceClient interface {
 	Multiply(ctx context.Context, in *ArithRequest, opts ...grpc.CallOption) (*ArithResponse, error)
+	Add(ctx context.Context, in *ArithRequest, opts ...grpc.CallOption) (*ArithResponse, error)
 }
 
 type arithServiceClient struct {
@@ -253,7 +259,16 @@ func NewArithServiceClient(cc grpc.ClientConnInterface) ArithServiceClient {
 
 func (c *arithServiceClient) Multiply(ctx context.Context, in *ArithRequest, opts ...grpc.CallOption) (*ArithResponse, error) {
 	out := new(ArithResponse)
-	err := c.cc.Invoke(ctx, "/proto.ArithService/multiply", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.ArithService/Multiply", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *arithServiceClient) Add(ctx context.Context, in *ArithRequest, opts ...grpc.CallOption) (*ArithResponse, error) {
+	out := new(ArithResponse)
+	err := c.cc.Invoke(ctx, "/proto.ArithService/Add", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -263,6 +278,7 @@ func (c *arithServiceClient) Multiply(ctx context.Context, in *ArithRequest, opt
 // ArithServiceServer is the server API for ArithService service.
 type ArithServiceServer interface {
 	Multiply(context.Context, *ArithRequest) (*ArithResponse, error)
+	Add(context.Context, *ArithRequest) (*ArithResponse, error)
 }
 
 // UnimplementedArithServiceServer can be embedded to have forward compatible implementations.
@@ -271,6 +287,9 @@ type UnimplementedArithServiceServer struct {
 
 func (*UnimplementedArithServiceServer) Multiply(context.Context, *ArithRequest) (*ArithResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Multiply not implemented")
+}
+func (*UnimplementedArithServiceServer) Add(context.Context, *ArithRequest) (*ArithResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Add not implemented")
 }
 
 func RegisterArithServiceServer(s *grpc.Server, srv ArithServiceServer) {
@@ -295,13 +314,35 @@ func _ArithService_Multiply_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ArithService_Add_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ArithRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ArithServiceServer).Add(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.ArithService/Add",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ArithServiceServer).Add(ctx, req.(*ArithRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ArithService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.ArithService",
 	HandlerType: (*ArithServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "multiply",
+			MethodName: "Multiply",
 			Handler:    _ArithService_Multiply_Handler,
+		},
+		{
+			MethodName: "Add",
+			Handler:    _ArithService_Add_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

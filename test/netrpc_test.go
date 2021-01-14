@@ -3,11 +3,13 @@ package test
 import (
 	"context"
 	"google.golang.org/grpc"
+	"log"
 	"net/rpc"
 	"net/rpc/jsonrpc"
 	"rpcx/proto"
 	"rpcx/service"
 	"testing"
+	"time"
 )
 
 /**
@@ -18,7 +20,14 @@ import (
  */
 
 func TestNetrpc(t *testing.T) {
-	conn, err := rpc.DialHTTP("tcp", "127.0.0.1:8095")
+	defer func() {
+		if err := recover(); err != nil {
+			t.Log(err)
+		}
+		t.Log(`这里写继续的业务`)
+	}()
+	h := `127.0.0.1:8095`
+	conn, err := rpc.DialHTTP("tcp", h)
 	if err != nil {
 		t.Error(`http dial err`, err)
 	}
@@ -42,6 +51,36 @@ func TestNetrpc(t *testing.T) {
 	}
 	t.Log(res2.Pro)
 	defer conn.Close()
+	time.Sleep(time.Second * 5)
+	t.Log(`业务的正常逻辑，啊哈哈哈`)
+}
+
+func RpcDial() error {
+	h := `127.0.0.1:8095`
+	conn, err := rpc.DialHTTP("tcp", h)
+	if err != nil {
+		return err
+	}
+	//调用乘法
+	req := service.ArithRequest{9, 2}
+	var res service.ArithResponse
+	err = conn.Call("Arith.Multiply", req, &res) // 乘法运算
+	if err != nil {
+		return err
+	}
+	log.Println(res.Pro)
+	return nil
+}
+
+func TestPanic(t *testing.T) {
+	defer func() {
+		if err := recover(); err != nil {
+			t.Log(err)
+		}
+		t.Log(`这里写继续的业务`)
+	}()
+	RpcDial()
+	t.Log(`这里是原来的业务逻辑`)
 }
 
 func TestJsonrpc(t *testing.T) {
@@ -62,7 +101,7 @@ func TestJsonrpc(t *testing.T) {
 func TestGrpc(t *testing.T) {
 	conn, err := grpc.Dial(`127.0.0.1:8028`, grpc.WithInsecure())
 	if err != nil {
-		t.Error(err)
+		t.Error(`rpc dial err`, err)
 	}
 	defer conn.Close()
 	client := proto.NewArithServiceClient(conn)
@@ -71,4 +110,9 @@ func TestGrpc(t *testing.T) {
 		B: 600,
 	})
 	t.Log(ret, err)
+	x, e := client.Add(context.Background(), &proto.ArithRequest{
+		A: 3,
+		B: 600,
+	})
+	t.Log(x, e)
 }

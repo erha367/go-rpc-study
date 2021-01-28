@@ -2,10 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
+	"rpcx/consul"
 	"rpcx/proto"
 )
 
@@ -36,10 +39,36 @@ func GrpcInit() {
 	}
 	s := grpc.NewServer()
 	proto.RegisterArithServiceServer(s, &GrpcServer{})
+	grpc_health_v1.RegisterHealthServer(s, &HealthImpl{})
 	reflection.Register(s)
+	RegisterToConsul()
 	err = s.Serve(lis)
 	if err != nil {
 		log.Println("failed to serve: %v", err)
 		return
 	}
+}
+
+func RegisterToConsul() {
+	consul.RegitserService("consul.sit13.dom:61170", &consul.ConsulService{
+		Name: "yangsen",
+		Tag:  []string{"tx"},
+		IP:   "10.0.32.131",
+		Port: 8028,
+	})
+}
+
+//health
+type HealthImpl struct{}
+
+// Check 实现健康检查接口，这里直接返回健康状态，这里也可以有更复杂的健康检查策略，比如根据服务器负载来返回
+func (h *HealthImpl) Check(ctx context.Context, req *grpc_health_v1.HealthCheckRequest) (*grpc_health_v1.HealthCheckResponse, error) {
+	fmt.Print("health checking\n")
+	return &grpc_health_v1.HealthCheckResponse{
+		Status: grpc_health_v1.HealthCheckResponse_SERVING,
+	}, nil
+}
+
+func (h *HealthImpl) Watch(req *grpc_health_v1.HealthCheckRequest, w grpc_health_v1.Health_WatchServer) error {
+	return nil
 }

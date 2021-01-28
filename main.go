@@ -23,8 +23,9 @@ func main() {
 	go service.JsonRpc()
 	/** net/rpc库 **/
 	go service.NetRpc()
+	log.Println(`started`)
 	/*-  系统信号监听 -*/
 	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
-	sig := <- sigc
+	sig := <-sigc
 	log.Println(sig)
 }

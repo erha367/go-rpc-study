@@ -1,119 +1,157 @@
 package consul
 
 import (
-	"errors"
+	"context"
 	"fmt"
-	"github.com/hashicorp/consul/api"
-	"google.golang.org/grpc/resolver"
-	"regexp"
+	"log"
 	"sync"
-)
+	"time"
 
-const (
-	defaultPort = "8500"
+	consulapi "github.com/hashicorp/consul/api"
+	"google.golang.org/grpc/resolver"
 )
-
-var (
-	errMissingAddr   = errors.New("consul resolver: missing address")
-	errAddrMisMatch  = errors.New("consul resolver: invalied uri")
-	errEndsWithColon = errors.New("consul resolver: missing port after port-separator colon")
-	regexConsul, _   = regexp.Compile("^([A-z0-9.]+)(:[0-9]{1,5})?/([A-z_]+)$")
-)
-
-func Init() {
-	fmt.Printf("calling consul init\n")
-	resolver.Register(NewBuilder())
-}
 
 type consulBuilder struct {
+	address     string
+	client      *consulapi.Client
+	serviceName string
 }
 
-type consulResolver struct {
-	address              string
-	wg                   sync.WaitGroup
-	cc                   resolver.ClientConn
-	name                 string
-	disableServiceConfig bool
-	lastIndex            uint64
-}
-
-func NewBuilder() resolver.Builder {
-	return &consulBuilder{}
+//NewConsulBuilder 创建consulbuilder
+func NewConsulBuilder(address string) resolver.Builder {
+	config := consulapi.DefaultConfig()
+	config.Address = address
+	config.Token = `p2BE1AtpwPbrxZdC6k+eXA==`
+	client, err := consulapi.NewClient(config)
+	if err != nil {
+		log.Fatal("LearnGrpc: create consul client error", err.Error())
+		return nil
+	}
+	return &consulBuilder{address: address, client: client}
 }
 
 func (cb *consulBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
+	cb.serviceName = target.Endpoint
 
-	fmt.Printf("calling consul build\n")
-	fmt.Printf("target: %v\n", target)
-	host, port, name, err := parseTarget(fmt.Sprintf("%s/%s", target.Authority, target.Endpoint))
+	adds, serviceConfig, err := cb.resolve()
 	if err != nil {
 		return nil, err
 	}
+	cc.NewAddress(adds)
+	cc.NewServiceConfig(serviceConfig)
 
-	cr := &consulResolver{
-		address:              fmt.Sprintf("%s%s", host, port),
-		name:                 name,
-		cc:                   cc,
-		disableServiceConfig: opts.DisableServiceConfig,
-		lastIndex:            0,
-	}
+	consulResolver := NewConsulResolver(&cc, cb, opts)
+	consulResolver.wg.Add(1)
+	go consulResolver.watcher()
 
-	cr.wg.Add(1)
-	go cr.watcher()
-	return cr, nil
-
+	return consulResolver, nil
 }
 
-func (cr *consulResolver) watcher() {
-	fmt.Printf("calling consul watcher\n")
-	config := api.DefaultConfig()
-	config.Address = cr.address
-	client, err := api.NewClient(config)
+func (cb consulBuilder) resolve() ([]resolver.Address, string, error) {
+
+	serviceEntries, _, err := cb.client.Health().Service(cb.serviceName, "", true, &consulapi.QueryOptions{})
 	if err != nil {
-		fmt.Printf("error create consul client: %v\n", err)
-		return
+		return nil, "", err
 	}
-	for {
-		services, metainfo, err := client.Health().Service(cr.name, cr.name, true, &api.QueryOptions{WaitIndex: cr.lastIndex})
-		if err != nil {
-			fmt.Printf("error retrieving instances from Consul: %v", err)
-		}
-		cr.lastIndex = metainfo.LastIndex
-		var newAddrs []resolver.Address
-		for _, service := range services {
-			addr := fmt.Sprintf("%v:%v", service.Service.Address, service.Service.Port)
-			newAddrs = append(newAddrs, resolver.Address{Addr: addr})
-		}
+
+	adds := make([]resolver.Address, 0)
+	for _, serviceEntry := range serviceEntries {
+		address := resolver.Address{Addr: fmt.Sprintf("%s:%d", serviceEntry.Service.Address, serviceEntry.Service.Port)}
+		adds = append(adds, address)
 	}
+	return adds, "", nil
 }
 
 func (cb *consulBuilder) Scheme() string {
 	return "consul"
 }
 
-func (cr *consulResolver) ResolveNow(opt resolver.ResolveNowOptions) {
+type consulResolver struct {
+	clientConn           *resolver.ClientConn
+	consulBuilder        *consulBuilder
+	t                    *time.Ticker
+	wg                   sync.WaitGroup
+	rn                   chan struct{}
+	ctx                  context.Context
+	cancel               context.CancelFunc
+	disableServiceConfig bool
+}
+
+//NewConsulResolver 生成resolver
+func NewConsulResolver(cc *resolver.ClientConn, cb *consulBuilder, opts resolver.BuildOptions) *consulResolver {
+	ctx, cancel := context.WithCancel(context.Background())
+	return &consulResolver{
+		clientConn:           cc,
+		consulBuilder:        cb,
+		t:                    time.NewTicker(time.Second),
+		ctx:                  ctx,
+		cancel:               cancel,
+		disableServiceConfig: opts.DisableServiceConfig}
+}
+
+func (cr *consulResolver) watcher() {
+	cr.wg.Done()
+	for {
+		select {
+		case <-cr.ctx.Done():
+			return
+		case <-cr.rn:
+		case <-cr.t.C:
+		}
+		adds, serviceConfig, err := cr.consulBuilder.resolve()
+		if err != nil {
+			log.Fatal("query service entries error:", err.Error())
+		}
+		(*cr.clientConn).NewAddress(adds)
+		(*cr.clientConn).NewServiceConfig(serviceConfig)
+	}
+}
+
+func (cr *consulResolver) Scheme() string {
+	return cr.consulBuilder.Scheme()
+}
+
+func (cr *consulResolver) ResolveNow(rno resolver.ResolveNowOptions) {
+	select {
+	case cr.rn <- struct{}{}:
+	default:
+	}
 }
 
 func (cr *consulResolver) Close() {
+	cr.cancel()
+	cr.wg.Wait()
+	cr.t.Stop()
 }
 
-func parseTarget(target string) (host, port, name string, err error) {
+type consulClientConn struct {
+	resolver.ClientConn
+	adds []resolver.Address
+	sc   string
+}
 
-	fmt.Printf("target uri: %v\n", target)
-	if target == "" {
-		return "", "", "", errMissingAddr
-	}
+//NewConsulClientConn 新连接
+func NewConsulClientConn() resolver.ClientConn {
+	return &consulClientConn{}
+}
 
-	if !regexConsul.MatchString(target) {
-		return "", "", "", errAddrMisMatch
-	}
+func (cc *consulClientConn) NewAddress(addresses []resolver.Address) {
+	cc.adds = addresses
+}
 
-	groups := regexConsul.FindStringSubmatch(target)
-	host = groups[1]
-	port = groups[2]
-	name = groups[3]
-	if port == "" {
-		port = defaultPort
+func (cc *consulClientConn) NewServiceConfig(serviceConfig string) {
+	cc.sc = serviceConfig
+}
+
+//GenerateAndRegisterConsulResolver 生成
+func GenerateAndRegisterConsulResolver(address string, serviceName string) (schema string, err error) {
+	builder := NewConsulBuilder(address)
+	target := resolver.Target{Scheme: builder.Scheme(), Endpoint: serviceName}
+	_, err = builder.Build(target, NewConsulClientConn(), resolver.BuildOptions{})
+	if err != nil {
+		return builder.Scheme(), err
 	}
-	return host, port, name, nil
+	resolver.Register(builder)
+	schema = builder.Scheme()
+	return
 }

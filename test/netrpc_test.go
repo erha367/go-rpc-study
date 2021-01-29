@@ -2,10 +2,13 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/balancer/roundrobin"
 	"log"
 	"net/rpc"
 	"net/rpc/jsonrpc"
+	"rpcx/consul"
 	"rpcx/proto"
 	"rpcx/service"
 	"testing"
@@ -99,24 +102,32 @@ func TestJsonrpc(t *testing.T) {
 }
 
 func TestGrpc(t *testing.T) {
-	conn, err := grpc.Dial(`127.0.0.1:8028`, grpc.WithInsecure())
+	schema, err := consul.GenerateAndRegisterConsulResolver(`consul.sit13.dom:61170`, `yangsen`)
 	if err != nil {
-		t.Error(`rpc dial err`, err)
+		log.Fatal("init consul resovler err", err.Error())
+	}
+
+	//建立连接
+	conn, err := grpc.Dial(fmt.Sprintf("%s:///yangsen", schema), grpc.WithInsecure(), grpc.WithBalancerName(roundrobin.Name))
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	client := proto.NewArithServiceClient(conn)
-	ret, err := client.Multiply(context.Background(), &proto.ArithRequest{
-		A: 3,
-		B: 600,
+
+	client := proto.NewHelloServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	res, err := client.SayHello(ctx, &proto.HelloRequest{
+		Name:                 "152****4335",
+		XXX_NoUnkeyedLiteral: struct{}{},
+		XXX_unrecognized:     nil,
+		XXX_sizecache:        0,
 	})
-	t.Log(ret, err)
-	x, e := client.Add(context.Background(), &proto.ArithRequest{
-		A: 3,
-		B: 600,
-	})
-	t.Log(x, e)
+	log.Println(res, err)
 }
 
+/*
 func TestGrpc2(t *testing.T) {
 	conn, err := grpc.Dial(`127.0.0.1:9000`, grpc.WithInsecure())
 	if err != nil {
@@ -132,3 +143,4 @@ func TestGrpc2(t *testing.T) {
 	})
 	t.Log(res, err)
 }
+*/

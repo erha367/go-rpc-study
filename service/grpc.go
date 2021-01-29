@@ -21,14 +21,14 @@ import (
 
 type GrpcServer struct{}
 
-func (s *GrpcServer) Multiply(ctx context.Context, req *proto.ArithRequest) (*proto.ArithResponse, error) {
+func (s *GrpcServer) SayHello(ctx context.Context, req *proto.HelloRequest) (*proto.HelloResponse, error) {
 	log.Println(`--- req ---`)
-	return &proto.ArithResponse{Pro: req.A * req.B}, nil
-}
-
-func (s *GrpcServer) Add(ctx context.Context, req *proto.ArithRequest) (*proto.ArithResponse, error) {
-	log.Println(`--- req ---`)
-	return &proto.ArithResponse{Pro: req.A + req.B}, nil
+	return &proto.HelloResponse{
+		Result:               "hello xxx " + req.Name,
+		XXX_NoUnkeyedLiteral: struct{}{},
+		XXX_unrecognized:     nil,
+		XXX_sizecache:        0,
+	}, nil
 }
 
 func GrpcInit() {
@@ -38,7 +38,7 @@ func GrpcInit() {
 		return
 	}
 	s := grpc.NewServer()
-	proto.RegisterArithServiceServer(s, &GrpcServer{})
+	proto.RegisterHelloServiceServer(s, &GrpcServer{})
 	grpc_health_v1.RegisterHealthServer(s, &HealthImpl{})
 	reflection.Register(s)
 	RegisterToConsul()

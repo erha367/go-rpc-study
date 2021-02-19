@@ -113,11 +113,9 @@ func TestGrpc(t *testing.T) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-
 	client := proto.NewHelloServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
-
 	res, err := client.SayHello(ctx, &proto.HelloRequest{
 		Name:                 "152****4335",
 		XXX_NoUnkeyedLiteral: struct{}{},
@@ -125,6 +123,23 @@ func TestGrpc(t *testing.T) {
 		XXX_sizecache:        0,
 	})
 	log.Println(res, err)
+	c2 := proto.NewClassServiceClient(conn)
+	res2, err := c2.Enter(ctx, &proto.EnterReq{
+		Account:              "2",
+		AccountType:          0,
+		Nickname:             "",
+		Cookie:               "",
+		Source:               0,
+		Client:               0,
+		LessonKey:            "",
+		ClassId:              0,
+		Ip:                   "127.0.0.1",
+		HasCookie:            false,
+		XXX_NoUnkeyedLiteral: struct{}{},
+		XXX_unrecognized:     nil,
+		XXX_sizecache:        0,
+	})
+	log.Println(res2, err)
 }
 
 /*

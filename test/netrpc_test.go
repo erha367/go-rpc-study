@@ -141,21 +141,3 @@ func TestGrpc(t *testing.T) {
 	})
 	log.Println(res2, err)
 }
-
-/*
-func TestGrpc2(t *testing.T) {
-	conn, err := grpc.Dial(`127.0.0.1:9000`, grpc.WithInsecure())
-	if err != nil {
-		t.Error(`rpc dial err`, err)
-	}
-	defer conn.Close()
-	client := proto.NewDemoClient(conn)
-	res, err := client.SayHelloURL(context.Background(), &proto.HelloReq{
-		Name:                 "Ma da Ha",
-		XXX_NoUnkeyedLiteral: struct{}{},
-		XXX_unrecognized:     nil,
-		XXX_sizecache:        0,
-	})
-	t.Log(res, err)
-}
-*/
